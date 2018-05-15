@@ -25,5 +25,6 @@ class YoukuItem(Item):
     category = Field()  # 分类
     chan_name = Field() # 频道名称
     chan_link = Field() # 频道链接
+    cmt_id = Field()    # 评论识别码
 
     # pass
