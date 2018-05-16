@@ -7,7 +7,7 @@ from re import compile, search
 # 预编译正则表达式, 用于解析视频页面详细信息
 re_subtitle = compile(r'subtitle\\\" title=\\\"(.+?)\\\">')
 re_category = compile(r'irCategory\\\" content=\\\"(.+?)\\\"')
-re_channame = compile(r'module_basic_sub.+?(alt.+?\\n\s+(.+?))\\')
+re_channame = compile(r'module_basic_sub.+?alt.+?\\n\s+(.+?)\\')
 re_chanlink = compile(r'module_basic_sub.+?(//i\.youku\.com/i/(?:[A-Za-z0-9]+))')
 
 
@@ -43,6 +43,6 @@ class YoukuSpider(Spider):
         source = response.body.decode("utf-8")  # 对源码进行正则匹配
         item['subtitle'] = re_subtitle.search(source).group(1)
         item['category'] = re_category.search(source).group(1)
-        item['channel_name'] = re_channame.search(source).group(2)
+        item['channel_name'] = re_channame.search(source).group(1)
         item['channel_link'] = "https:" + re_chanlink.search(source).group(1)
         yield item  # 返回填写好的 YoukuItem
