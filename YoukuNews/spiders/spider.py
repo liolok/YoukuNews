@@ -39,5 +39,4 @@ class YoukuSpider(Spider):
         item['category'] = search(r'irCategory\\\" content=\\\"(.+?)\\\"', source)[1]
         item['chan_name'] = search(r'alt=\\\"\\\" />\\n\s+(.+?)\\n', source)[1]
         item['chan_link'] = search(r'<a href=\\\"(//i\.youku\.com/i/(?:[A-Za-z0-9=]+))', source)[1]
-        item['cmt_id'] = search(r'videoId: &#39;(.+?)&#39;', source)[1]
         yield item  # 返回填写好的 YoukuItem
