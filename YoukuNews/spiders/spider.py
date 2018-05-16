@@ -25,8 +25,8 @@ class YoukuSpider(Spider):
             item['title'] = v.css('.v-link').xpath('./a/@title').extract_first()
             item['thumb'] = v.css('.v-thumb').xpath('./img/@src').re_first('(//.+)')
             item['time'] = v.css('.v-time::text').extract_first()
-            item['view'] = v.css('.v-meta-entry').xpath('./span[1]/text()').extract_first()
-            item['cmt_num'] = v.css('.v-meta-entry').xpath('./span[2]/text()').extract_first()
+            item['statplay'] = v.css('.ico-statplay+span::text').extract_first()          # 播放图标后面的文本
+            item['statcomment'] = v.css('.ico-statcomment+span::text').extract_first()    # 评论图标后面的文本
             list.append(item)  # 追加视频列表
         for item in list:  # 回调 parse_detail() 对列表中的每个 YoukuItem 的视频页面进行解析
             yield Request(url="https:" + item['url'], meta={'list': item}, callback=self.parse_detail)
