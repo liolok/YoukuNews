@@ -21,9 +21,9 @@ class YoukuItem(Item):
     statcomment = Field()   # 评论数
 
     # 详细信息, 将由 spider.parse_detail() 解析
-    subtitle = Field()  # 副标题
-    category = Field()  # 分类
-    chan_name = Field() # 频道名称
-    chan_link = Field() # 频道链接
+    subtitle = Field()      # 副标题
+    category = Field()      # 分类
+    channel_name = Field()  # 频道名称
+    channel_link = Field()  # 频道链接
 
     # pass
