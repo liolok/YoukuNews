@@ -13,6 +13,7 @@ class YoukuItem(Item):
     # # name = Field()
 
     # 基本信息, 将由 spider.parse_basic() 解析
+    vid = Field()           # 唯一识别码
     url = Field()           # 页面链接
     title = Field()         # 标题
     thumb = Field()         # 缩略图链接
