@@ -31,7 +31,7 @@ class YoukuSpider(Spider):
             item['vid'] = link[1]             # 链接id字段即为vid
             item['url'] = "https:" + link[0]  # 补全协议类型https
             item['title'] = v.css('.v-link').xpath('./a/@title').extract_first()
-            item['thumb'] = v.css('.v-thumb').xpath('./img/@src').re_first('(//.+)')
+            item['thumb'] = "https:" + v.css('.v-thumb').xpath('./img/@src').re_first('//.+')
             item['time'] = v.css('.v-time::text').extract_first()
             item['statplay'] = v.css('.ico-statplay+span::text').extract_first()        # 播放图标后面的文本
             item['statcomment'] = v.css('.ico-statcomment+span::text').extract_first()  # 评论图标后面的文本
