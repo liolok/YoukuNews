@@ -64,9 +64,14 @@ ROBOTSTXT_OBEY = False
 
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'YoukuNews.pipelines.YoukunewsPipeline': 300,
-#}
+ITEM_PIPELINES = {
+   'YoukuNews.pipelines.YoukunewsPipeline': 300,
+}
+
+# Configure MongoDB, 数据库配置
+# URI格式文档: https://docs.mongodb.com/manual/reference/connection-string/
+MONGO_URI = "127.0.0.1:27017"   # URI, 用于连接应用与MongoDB实例
+MONGO_DATABASE = "YoukuNews"    # 数据库名称
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
@@ -88,3 +93,4 @@ ROBOTSTXT_OBEY = False
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
