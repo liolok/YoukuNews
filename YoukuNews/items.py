@@ -8,7 +8,7 @@
 from scrapy import Item, Field
 
 
-class YoukuItem(Item):
+class VideoItem(Item):
     # # define the fields for your item here like:
     # # name = Field()
 
@@ -28,7 +28,6 @@ class YoukuItem(Item):
     channel_link = Field()  # 频道链接
 
     # 评论信息, 将由 spider.parse_comment() 解析
-    cmt_url = Field()       # 评论链接
     cmt_num = Field()       # 评论数目
     comment = Field()       # 评论列表
 

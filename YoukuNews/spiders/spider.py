@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from scrapy import Spider, Request
-from YoukuNews.items import YoukuItem, CommentItem
+from YoukuNews.items import VideoItem, CommentItem
 from re import compile
 from json import loads
 
@@ -19,20 +19,20 @@ class YoukuSpider(Spider):
 
     # 从目录页面解析视频列表及其基本信息
     def parse_basic(self, response):
-        list = []  # 创建视频列表
+        video_list = []  # 创建视频信息列表
         for v in response.css('.v'):  # 遍历目录页面
-            item = YoukuItem()  # 循环实例化 YoukuItem, 并解析基本信息填入
+            video = VideoItem()  # 循环实例化 VideoItem, 并解析基本信息填入
             link = v.css('.v-link').xpath('./a/@href').re('(//v.youku.com/v_show/id_([A-Za-z0-9]+))')
-            item['vid'] = link[1]                   # 链接id字段
-            item['url'] = self.scheme + link[0]     # 补全协议类型
-            item['title'] = v.css('.v-link').xpath('./a/@title').extract_first()
-            item['thumb'] = self.scheme + v.css('.v-thumb').xpath('./img/@src').re_first('//.+')
-            item['time'] = v.css('.v-time::text').extract_first()
-            item['statplay'] = v.css('.ico-statplay+span::text').extract_first()        # 播放图标后面的文本
-            item['statcomment'] = v.css('.ico-statcomment+span::text').extract_first()  # 评论图标后面的文本
-            list.append(item)  # 追加视频列表
-        for item in list:  # 回调 parse_detail() 对列表中的每个 YoukuItem 的视频页面进行解析
-            yield Request(url=item['url'], meta={'list': item}, callback=self.parse_detail)
+            video['vid'] = link[1]                   # 链接id字段
+            video['url'] = self.scheme + link[0]     # 补全协议类型
+            video['title'] = v.css('.v-link').xpath('./a/@title').extract_first()
+            video['thumb'] = self.scheme + v.css('.v-thumb').xpath('./img/@src').re_first('//.+')
+            video['time'] = v.css('.v-time::text').extract_first()
+            video['statplay'] = v.css('.ico-statplay+span::text').extract_first()        # 播放图标后面的文本
+            video['statcomment'] = v.css('.ico-statcomment+span::text').extract_first()  # 评论图标后面的文本
+            video_list.append(video)  # 追加视频信息列表
+        for video in video_list:  # 回调 parse_detail() 对列表中的每个 VideoItem 的视频页面进行解析
+            yield Request(url=video['url'], meta={'item': video}, callback=self.parse_detail)
 
     # 预编译正则表达式, 用于解析视频页面详细信息
     re_subtitle = compile(r'subtitle\\\" title=\\\"(.+?)\\\">')                         # 副标题
@@ -42,23 +42,23 @@ class YoukuSpider(Spider):
 
     # 从视频页面解析详细信息
     def parse_detail(self, response):
-        item = response.meta['list']  # 接收 parse_basic() 传入的 YoukuItem
+        video = response.meta['item']  # 接收 parse_basic() 传入的 VideoItem
         source = response.body.decode("utf-8")  # 对源码进行正则匹配
-        item['subtitle'] = self.re_subtitle.search(source).group(1)
-        item['category'] = self.re_category.search(source).group(1)
-        item['channel_name'] = self.re_channame.search(source).group(1)
-        item['channel_link'] = self.scheme + self.re_chanlink.search(source).group(1)
-        # 回调 parse_comment() 对当前 YoukuItem 的评论源码进行解析
-        yield Request(url=self.get_cmt_url(item['vid']), meta={'list': item}, callback=self.parse_comment)
+        video['subtitle'] = self.re_subtitle.search(source).group(1)
+        video['category'] = self.re_category.search(source).group(1)
+        video['channel_name'] = self.re_channame.search(source).group(1)
+        video['channel_link'] = self.scheme + self.re_chanlink.search(source).group(1)
+        # 回调 parse_comment() 对当前 VideoItem 的评论源码进行解析
+        yield Request(url=self.get_cmt_url(video['vid']), meta={'item': video}, callback=self.parse_comment)
 
     # 从评论源码解析评论内容
     def parse_comment(self,response):
-        item = response.meta['list']  # 接收 parse_basic() 传入的 YoukuItem
+        video = response.meta['item']  # 接收 parse_detail() 传入的 VideoItem
         source = response.body.decode("utf-8")  # 将源码转为json结构
         json = loads(source[(source.find('(')+1):source.rfind(')')])
-        item['cmt_num'] = json['data']['sourceCommentSize']
+        video['cmt_num'] = json['data']['sourceCommentSize']
         comments = list(json['data']['comment'])
-        cmt_list = []   # 评论Item列表
+        cmt_list = []   # 评论列表
         for cmt in comments:
             comment = CommentItem()
             comment['id'] = cmt['id']
@@ -71,8 +71,8 @@ class YoukuSpider(Spider):
             comment['num_down'] = cmt['downCount']
             comment['num_reply'] = cmt['replyCount']
             cmt_list.append(comment)
-        item['comment'] = cmt_list  # 将列表填入 YoukuItem
-        yield item  # 返回填写好的 YoukuItem
+        video['comment'] = cmt_list  # 将评论列表填入 VideoItem
+        yield video  # 返回填写好的 VideoItem
 
     # 拼接评论链接
     def get_cmt_url(self, vid):
