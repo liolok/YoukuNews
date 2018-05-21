@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from scrapy import Spider, Request
-from YoukuNews.items import YoukuItem
-from re import compile, search
-
+from YoukuNews.items import YoukuItem, CommentItem
+from re import compile
+from json import loads
 
 class YoukuSpider(Spider):
     name = 'youku'  # 爬虫唯一识别名
@@ -48,4 +48,47 @@ class YoukuSpider(Spider):
         item['category'] = self.re_category.search(source).group(1)
         item['channel_name'] = self.re_channame.search(source).group(1)
         item['channel_link'] = self.scheme + self.re_chanlink.search(source).group(1)
+        # 回调 parse_comment() 对当前 YoukuItem 的评论源码进行解析
+        yield Request(url=self.get_cmt_url(item['vid']), meta={'list': item}, callback=self.parse_comment)
+
+    # 从评论源码解析评论内容
+    def parse_comment(self,response):
+        item = response.meta['list']  # 接收 parse_basic() 传入的 YoukuItem
+        source = response.body.decode("utf-8")  # 将源码转为json结构
+        json = loads(source[(source.find('(')+1):source.rfind(')')])
+        item['cmt_num'] = json['data']['sourceCommentSize']
+        comments = list(json['data']['comment'])
+        cmt_list = []   # 评论Item列表
+        for cmt in comments:
+            comment = CommentItem()
+            comment['id'] = cmt['id']
+            comment['id_user'] = cmt['userId']
+            comment['id_parent'] = cmt['parentCommentId']
+            comment['at_users'] = cmt['atUsers']
+            comment['content'] = cmt['content']
+            comment['time'] = cmt['createTime']
+            comment['num_up'] = cmt['upCount']
+            comment['num_down'] = cmt['downCount']
+            comment['num_reply'] = cmt['replyCount']
+            cmt_list.append(comment)
+        item['comment'] = cmt_list  # 将列表填入 YoukuItem
         yield item  # 返回填写好的 YoukuItem
+
+    # 拼接评论链接
+    def get_cmt_url(self, vid):
+        cmt_url = self.scheme
+        cmt_url += "//p.comments.youku.com"         # host
+        cmt_url += "/ycp/comment/pc/commentList"    # path
+        cmt_url += "?jsoncallback=n_commentList"    # query
+        cmt_url += "&app=" + "100-DDwODVkv"
+        cmt_url += "&objectId=" + vid
+        cmt_url += "&objectType=" + "1"
+        cmt_url += "&listType=" + "0"
+        cmt_url += "&currentPage=" + "1"
+        cmt_url += "&pageSize=" + "30"
+        cmt_url += "&sign=" + "df030fad8c097139f7fd726e85f63339"
+        cmt_url += "&time=" + "1526430304"
+        return cmt_url
+
+
+
