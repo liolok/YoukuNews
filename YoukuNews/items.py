@@ -8,10 +8,7 @@
 from scrapy import Item, Field
 
 
-class VideoItem(Item):
-    # # define the fields for your item here like:
-    # # name = Field()
-
+class VideoItem(Item):      # 视频信息
     # 基本信息, 将由 spider.parse_basic() 解析
     vid = Field()           # 唯一识别码
     url = Field()           # 页面链接
@@ -28,11 +25,12 @@ class VideoItem(Item):
     channel_link = Field()  # 频道链接
 
     # 评论信息, 将由 spider.parse_comment() 解析
-    cmt_num = Field()       # 评论数目
-    comment = Field()       # 评论列表
+    comment_list = Field()  # 所有评论Item列表
+    comment_num = Field()   # 评论数目
+    comment_hot = Field()   # 热评id列表
 
 
-class CommentItem(Item):
+class CommentItem(Item):    # 评论信息
     id = Field()            # 唯一识别码
     id_user = Field()       # 发送评论用户
     id_parent = Field()     # 父评论

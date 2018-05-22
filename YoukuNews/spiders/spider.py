@@ -49,33 +49,45 @@ class YoukuSpider(Spider):
         video['channel_name'] = self.re_channame.search(source).group(1)
         video['channel_link'] = self.scheme + self.re_chanlink.search(source).group(1)
         # 回调 parse_comment() 对当前 VideoItem 的评论源码进行解析
-        yield Request(url=self.get_cmt_url(video['vid']), meta={'item': video}, callback=self.parse_comment)
+        video['comment_list'] = []
+        yield Request(url=self.get_cmt_url(video['vid'], "1"),
+                      meta={'item': video},
+                      callback=self.parse_comment)
 
-    # 从评论源码解析评论内容
-    def parse_comment(self,response):
+    # 从评论源码解析评论信息
+    def parse_comment(self, response):
         video = response.meta['item']  # 接收 parse_detail() 传入的 VideoItem
         source = response.body.decode("utf-8")  # 将源码转为json结构
-        json = loads(source[(source.find('(')+1):source.rfind(')')])
-        video['cmt_num'] = json['data']['sourceCommentSize']
+        json = loads(source[(source.find('(') + 1):source.rfind(')')])
+        page_current = json['data']['currentPage']  # 当前页码
+        page_total = json['data']['totalPage']      # 页码总数
+        if page_current is 1:   # 评论数目和热评id在评论首页获取一次即可
+            video['comment_num'] = json['data']['sourceCommentSize']  # 源码评论数目
+            video['comment_hot'] = []  # 热评id列表
+            for hot in list(json['data']['hot']):
+                video['comment_hot'].append(hot['id'])
         comments = list(json['data']['comment'])
-        cmt_list = []   # 评论列表
-        for cmt in comments:
-            comment = CommentItem()
-            comment['id'] = cmt['id']
-            comment['id_user'] = cmt['userId']
-            comment['id_parent'] = cmt['parentCommentId']
-            comment['at_users'] = cmt['atUsers']
-            comment['content'] = cmt['content']
-            comment['time'] = cmt['createTime']
-            comment['num_up'] = cmt['upCount']
-            comment['num_down'] = cmt['downCount']
-            comment['num_reply'] = cmt['replyCount']
-            cmt_list.append(comment)
-        video['comment'] = cmt_list  # 将评论列表填入 VideoItem
-        yield video  # 返回填写好的 VideoItem
+        for c in comments:
+            cmt = CommentItem()
+            cmt['id'] = c['id']
+            cmt['id_user'] = c['userId']
+            cmt['id_parent'] = c['parentCommentId']
+            cmt['at_users'] = c['atUsers']
+            cmt['content'] = c['content']
+            cmt['time'] = c['createTime']
+            cmt['num_up'] = c['upCount']
+            cmt['num_down'] = c['downCount']
+            cmt['num_reply'] = c['replyCount']
+            video['comment_list'].append(cmt)
+        if page_current < page_total:
+            yield Request(url=self.get_cmt_url(video['vid'], str(page_current + 1)),
+                          meta={'item': video},
+                          callback=self.parse_comment)
+        else:
+            yield video  # 返回填写好的 VideoItem
 
     # 拼接评论链接
-    def get_cmt_url(self, vid):
+    def get_cmt_url(self, vid, page):
         cmt_url = self.scheme
         cmt_url += "//p.comments.youku.com"         # host
         cmt_url += "/ycp/comment/pc/commentList"    # path
@@ -84,11 +96,8 @@ class YoukuSpider(Spider):
         cmt_url += "&objectId=" + vid
         cmt_url += "&objectType=" + "1"
         cmt_url += "&listType=" + "0"
-        cmt_url += "&currentPage=" + "1"
+        cmt_url += "&currentPage=" + page
         cmt_url += "&pageSize=" + "30"
         cmt_url += "&sign=" + "df030fad8c097139f7fd726e85f63339"
         cmt_url += "&time=" + "1526430304"
         return cmt_url
-
-
-
