@@ -30,6 +30,10 @@ class VideoItem(Item):      # 视频信息
     comment_num = Field()   # 评论数目
     comment_hot = Field()   # 热评id列表
 
+    # 视频文件
+    file_urls = Field()     # 分段视频下载链接列表
+    file_paths = Field()    # 分段视频本地路径列表
+
 
 class CommentItem(Item):    # 评论信息
     id = Field()            # 唯一识别码
