@@ -26,7 +26,7 @@ class YoukuSpider(Spider):
             video['vid'] = link[1]                   # 链接id字段
             video['url'] = self.scheme + link[0]     # 补全协议类型
             video['title'] = v.css('.v-link').xpath('./a/@title').extract_first()
-            video['thumb'] = self.scheme + v.css('.v-thumb').xpath('./img/@src').re_first('//.+')
+            video['thumb_url'] = self.scheme + v.css('.v-thumb').xpath('./img/@src').re_first('//.+')
             video['time'] = v.css('.v-time::text').extract_first()
             video['statplay'] = v.css('.ico-statplay+span::text').extract_first()        # 播放图标后面的文本
             video['statcomment'] = v.css('.ico-statcomment+span::text').extract_first()  # 评论图标后面的文本

@@ -66,7 +66,16 @@ ROBOTSTXT_OBEY = False
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
    'YoukuNews.pipelines.YoukunewsPipeline': 300,
+   'YoukuNews.pipelines.ThumbPipeline': 1,
+   # 'scrapy.pipelines.images.ImagesPipeline': 1,
 }
+
+# Configure images pipelines, 缩略图下载配置
+IMAGES_STORE = './Downloads/thumbs/'
+IMAGES_URLS_FIELD = 'thumb_url'
+IMAGES_RESULT_FIELD = 'thumb_result'
+IMAGES_MIN_HEIGHT = 110
+IMAGES_MIN_WIDTH = 110
 
 # Configure MongoDB, 数据库配置
 # URI格式文档: https://docs.mongodb.com/manual/reference/connection-string/

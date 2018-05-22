@@ -8,6 +8,8 @@
 # how to use from_crawler() method and how to clean up the resources properly.
 
 from pymongo import MongoClient
+from scrapy import Request
+from scrapy.pipelines.images import ImagesPipeline
 
 
 class YoukunewsPipeline(object):
@@ -36,16 +38,18 @@ class YoukunewsPipeline(object):
         self.db[self.collection_name].insert_one(dict(item))
         return item
 
-    # 从管道中取出图片的url并调用request函数
-    # 去获取这个url并调用request函数去获取这个url       		
-    def get_media_requests(self, item, info):
-        for thumb_url in item['thumb_url']:
-            yield Request(thumb_url)
 
-    #当下载完了图片后，将图片的路径以及网址，校验码保存在item中
+class ThumbPipeline(ImagesPipeline):
+    # 从item中取出缩略图的url并下载文件
+    def get_media_requests(self, item, info):
+        yield Request(url=item['thumb_url'], meta={'item': item})
+
+    # 自定义缩略图路径(仅更改命名)
+    def file_path(self, request, response=None, info=None):
+        item = request.meta['item']  # 接受 get_media_requests 传入的 item
+        return "%s - %s.jpg" % (item['vid'],item['title'])  # 返回命名格式
+
+    # 下载完成后, 将缩略图本地路径保存到item中
     def item_completed(self, results, item, info):
-        image_paths = [x['path'] for ok, x in results if ok]
-        if not image_paths:
-            raise DropItem("Item contains no images")
-        item['thumb_paths'] = image_paths
+        item['thumb_path'] = [x['path'] for ok, x in results if ok][0]
         return item
