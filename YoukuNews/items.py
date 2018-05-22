@@ -16,7 +16,8 @@ class VideoItem(Item):
     vid = Field()           # 唯一识别码
     url = Field()           # 页面链接
     title = Field()         # 标题
-    thumb = Field()         # 缩略图链接
+    thumb_url = Field()     # 缩略图链接
+    thumb_path = Field()    # 缩略图保存路径
     time = Field()          # 时长
     statplay = Field()      # 播放量
     statcomment = Field()   # 评论量

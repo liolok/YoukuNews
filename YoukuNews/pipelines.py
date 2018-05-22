@@ -35,3 +35,17 @@ class YoukunewsPipeline(object):
         # 对集合(collection)插入一个文档(document)
         self.db[self.collection_name].insert_one(dict(item))
         return item
+
+    # 从管道中取出图片的url并调用request函数
+    # 去获取这个url并调用request函数去获取这个url       		
+    def get_media_requests(self, item, info):
+        for thumb_url in item['thumb_url']:
+            yield Request(thumb_url)
+
+    #当下载完了图片后，将图片的路径以及网址，校验码保存在item中
+    def item_completed(self, results, item, info):
+        image_paths = [x['path'] for ok, x in results if ok]
+        if not image_paths:
+            raise DropItem("Item contains no images")
+        item['thumb_paths'] = image_paths
+        return item
