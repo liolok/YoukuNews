@@ -67,13 +67,12 @@ ROBOTSTXT_OBEY = False
 ITEM_PIPELINES = {
    'YoukuNews.pipelines.YoukunewsPipeline': 300,
    'YoukuNews.pipelines.ThumbPipeline': 1,
-   # 'scrapy.pipelines.images.ImagesPipeline': 1,
 }
 
 # Configure images pipelines, 缩略图下载配置
-IMAGES_STORE = './Downloads/thumbs/'
+IMAGES_STORE = './Downloads/'
 IMAGES_URLS_FIELD = 'thumb_url'
-IMAGES_RESULT_FIELD = 'thumb_result'
+# IMAGES_RESULT_FIELD = 'thumb_path'
 IMAGES_MIN_HEIGHT = 110
 IMAGES_MIN_WIDTH = 110
 

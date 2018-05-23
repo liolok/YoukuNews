@@ -3,9 +3,7 @@
 # Define your item pipelines here
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html#write-items-to-mongodb
-# The main point of this example is to show \
-# how to use from_crawler() method and how to clean up the resources properly.
+# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
 from pymongo import MongoClient
 from scrapy import Request
@@ -13,6 +11,9 @@ from scrapy.pipelines.images import ImagesPipeline
 
 
 class YoukunewsPipeline(object):
+    # https://docs.scrapy.org/en/latest/topics/item-pipeline.html#write-items-to-mongodb
+    # The main point of this example is to show \
+    # how to use from_crawler() method and how to clean up the resources properly.
     collection_name = 'VideoInfo'
 
     def __init__(self, mongo_uri, mongo_db):
@@ -44,10 +45,10 @@ class ThumbPipeline(ImagesPipeline):
     def get_media_requests(self, item, info):
         yield Request(url=item['thumb_url'], meta={'item': item})
 
-    # 自定义缩略图路径(仅更改命名)
+    # 自定义缩略图路径(及命名), 注意该路径是 IMAGES_STORE 的相对路径
     def file_path(self, request, response=None, info=None):
-        item = request.meta['item']  # 接受 get_media_requests 传入的 item
-        return "%s - %s.jpg" % (item['vid'],item['title'])  # 返回命名格式
+        vid = request.meta['item']['vid']  # 获取item的vid
+        return "%s/thumb.jpg" % vid  # 返回路径及命名格式
 
     # 下载完成后, 将缩略图本地路径保存到item中
     def item_completed(self, results, item, info):
