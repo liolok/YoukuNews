@@ -40,6 +40,13 @@ class YoukuSpider(Spider):
     re_channame = compile(r'module_basic_sub.+?alt.+?\\n\s+(.+?)\\')                    # 频道名称
     re_chanlink = compile(r'module_basic_sub.+?(//i\.youku\.com/i/(?:[A-Za-z0-9]+))')   # 频道链接
 
+    # UPS API URL Request Parameters, UPS接口链接请求参数
+    # P_sck 来自 WKH 的优酷账号, 特此鸣谢
+    P_sck  = 'W2aaE+5jCOmZENJT9Zk0sItuaySRhQ1CuDcHACLPaSJ84g7C2yHG7LOrHnnLpQ9os+AKG1Dtypkk'
+    P_sck += '+mTxhfr7p92xaBUMmz2fuI0OoRAs5agU1nLo/X6HA/gbSkezH6BVX/Dobj9Mv63IsIzqFmcUxA=='
+    headers = {'Referer': scheme + '//v.youku.com'}
+    cookies = {'P_sck': P_sck}
+
     # 从视频页面解析详细信息
     def parse_detail(self, response):
         video = response.meta['item']  # 接收 parse_basic() 传入的 VideoItem
@@ -48,10 +55,28 @@ class YoukuSpider(Spider):
         video['category'] = self.re_category.search(source).group(1)
         video['channel_name'] = self.re_channame.search(source).group(1)
         video['channel_link'] = self.scheme + self.re_chanlink.search(source).group(1)
+        # 回调 parse_file() 解析当前 VideoItem 的文件下载地址列表
+        yield Request(url=self.get_ups_url(video['vid']),
+                      meta={'item': video},
+                      headers=self.headers,
+                      cookies=self.cookies,
+                      callback=self.parse_file)
+
+    # 从UPS接口解析文件下载链接列表
+    def parse_file(self, response):
+        video = response.meta['item']  # 接收 parse_detail() 传入的 VideoItem
+        source = response.body.decode("utf-8")  # 将源码转为json结构
+        json = loads(source[(source.find('(') + 1):source.rfind(')')])
+        video['file_urls'] = []  # 视频分段下载链接列表
+        for stream in json['data']['stream']:
+            if stream['stream_type'] == 'mp4sd':    # 选择标清
+                for seg in stream['segs']:          # 获取分段
+                    video['file_urls'].append(seg['cdn_url'])
         # 回调 parse_comment() 对当前 VideoItem 的评论源码进行解析
         video['comment_list'] = []
         yield Request(url=self.get_cmt_url(video['vid'], "1"),
                       meta={'item': video},
+                      headers={'Referer': video['url']},
                       callback=self.parse_comment)
 
     # 从评论源码解析评论信息
@@ -101,3 +126,27 @@ class YoukuSpider(Spider):
         cmt_url += "&sign=" + "df030fad8c097139f7fd726e85f63339"
         cmt_url += "&time=" + "1526430304"
         return cmt_url
+
+    # UPS API Query Parameters, UPS接口查询参数
+    # 来源: https://github.com/zhangn1985/ykdl/issues/270
+    ccode = '0502'
+    utid  = 'OMofE8kM4gMCARueFdD7Bexs'
+    ckey  = 'DIl58SLFxFNndSV1GFNnMQVYkx1PP5tKe1siZu%2F86PR1u%2FWh1Ptd%2BWOZsHHWxysS'
+    ckey += 'fAOhNJpdVWsdVJNsfJ8Sxd8WKVvNfAS8aS8fAOzYARzPyPc3JvtnPHjTdKfESTdnuTW6ZP'
+    ckey += 'vk2pNDh4uFzotgdMEFkzQ5wZVXl2Pf1%2FY6hLK0OnCNxBj3%2Bnb0v72gZ6b0td%2BWOZ'
+    ckey += 'sHHWxysSo%2F0y9D2K42SaB8Y%2F%2BaD2K42SaB8Y%2F%2BahU%2BWOZsHcrxysooUeND'
+
+    # 拼接UPS_API链接
+    def get_ups_url(self, vid):
+        ups_url = self.scheme
+        ups_url += '//ups.youku.com'    # host
+        ups_url += '/ups/get.json'      # path
+        ups_url += '?callback=json'     # query
+        ups_url += '&vid=' + vid
+        ups_url += '&ccode=' + self.ccode
+        ups_url += '&client_ip=' + '192.168.1.1'
+        ups_url += '&client_ts=' + '1527072900'
+        ups_url += '&utid=' + self.utid
+        ups_url += '&ckey=' + self.ckey
+        return ups_url
+

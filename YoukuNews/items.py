@@ -25,6 +25,10 @@ class VideoItem(Item):      # 视频信息
     channel_name = Field()  # 频道名称
     channel_link = Field()  # 频道链接
 
+    # 文件信息, 将由 spider.parse_file() 解析
+    file_urls = Field()     # 分段视频下载链接列表
+    file_paths = Field()    # 分段视频本地路径列表
+
     # 评论信息, 将由 spider.parse_comment() 解析
     comment_list = Field()  # 所有评论Item列表
     comment_num = Field()   # 评论数目

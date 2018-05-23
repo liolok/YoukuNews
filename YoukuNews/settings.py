@@ -67,7 +67,12 @@ ROBOTSTXT_OBEY = False
 ITEM_PIPELINES = {
    'YoukuNews.pipelines.YoukunewsPipeline': 300,
    'YoukuNews.pipelines.ThumbPipeline': 1,
+   'YoukuNews.pipelines.FilesPipeline': 2,
 }
+
+# Configure files pipelines, 视频文件下载配置
+FILES_STORE = './Downloads/'
+FILES_RESULT_FIELD = 'file_paths'
 
 # Configure images pipelines, 缩略图下载配置
 IMAGES_STORE = './Downloads/'

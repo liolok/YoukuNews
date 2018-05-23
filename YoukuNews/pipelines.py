@@ -8,6 +8,7 @@
 from pymongo import MongoClient
 from scrapy import Request
 from scrapy.pipelines.images import ImagesPipeline
+from scrapy.pipelines.files import FilesPipeline
 
 
 class YoukunewsPipeline(object):
@@ -53,4 +54,25 @@ class ThumbPipeline(ImagesPipeline):
     # 下载完成后, 将缩略图本地路径保存到item中
     def item_completed(self, results, item, info):
         item['thumb_path'] = [x['path'] for ok, x in results if ok][0]
+        return item
+
+
+class FilesPipeline(FilesPipeline):
+    # 从item中取出分段视频的url列表并下载文件
+    def get_media_requests(self, item, info):
+        urls = item['file_urls']
+        for url in urls:
+            yield Request(url=url,
+                          meta={'item': item,'index': urls.index(url)})
+
+    # 自定义分段视频下载到本地的路径(以及命名)
+    def file_path(self, request, response=None, info=None):
+        vid = request.meta['item']['vid']  # 获取item的vid
+        index = request.meta['index']  # 获取当前分段文件序号
+        return "%s/%s.mp4" % (vid, index)  # 返回路径及命名格式
+
+    # 下载完成后, 将分段视频本地路径保存到item中
+    def item_completed(self, results, item, info):
+        file_paths = [x['path'] for ok, x in results if ok]
+        item['file_paths'] = file_paths
         return item
