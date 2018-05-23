@@ -6,3 +6,6 @@ __pycache__
 
 # Downloaded images and files
 Downloads
+
+# log files
+*.log
