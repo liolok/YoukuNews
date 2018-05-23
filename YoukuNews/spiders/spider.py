@@ -11,11 +11,11 @@ class YoukuSpider(Spider):
 
     scheme = "https:"  # URL传送协议
 
-    # 从以下三个目录页面开始解析
+    # 从以下三个目录页面开始解析(减少到一个, 方便调试)
     def start_requests(self):
         yield Request('http://news.youku.com/index/jrrm', self.parse_basic)  # 今日热门
-        yield Request('http://news.youku.com/index/jkjs', self.parse_basic)  # 监控纪实
-        yield Request('http://news.youku.com/index/jsqy', self.parse_basic)  # 军事前沿
+        # yield Request('http://news.youku.com/index/jkjs', self.parse_basic)  # 监控纪实
+        # yield Request('http://news.youku.com/index/jsqy', self.parse_basic)  # 军事前沿
 
     # 从目录页面解析视频列表及其基本信息
     def parse_basic(self, response):
