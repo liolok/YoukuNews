@@ -2,7 +2,6 @@
 
 from scrapy import Spider, Request
 from YoukuNews.items import VideoItem, CommentItem
-from re import compile
 from json import loads
 
 class YoukuSpider(Spider):
@@ -36,11 +35,12 @@ class YoukuSpider(Spider):
     # 从视频页面解析详细信息
     def parse_detail(self, response):
         video = response.meta['item']  # 接收 parse_basic() 传入的 VideoItem
-        source = response.text  # 对源码进行正则匹配
-        video['subtitle'] = self.re_subtitle.search(source).group(1)
-        video['category'] = self.re_category.search(source).group(1)
-        video['channel_name'] = self.re_channame.search(source).group(1)
-        video['channel_link'] = self.scheme + self.re_chanlink.search(source).group(1)
+        video['subtitle'] = response.css('#subtitle::text').extract_first()
+        video['category'] = response.css('.v-tag::text').extract_first()
+        channel = response.css('#module_basic_sub a')
+        video['channel_name'] = channel.css('::text').re_first(r'\s+(.+?)\n')
+        video['channel_link'] = self.scheme
+        video['channel_link'] += channel.xpath('./@href').re_first(r'//i.youku.com/i/(?:[A-Za-z0-9]+)')
         # 回调 parse_file() 解析当前 VideoItem 的文件下载地址列表
         yield Request(url=self.get_ups_url(video['vid']),
                       meta={'item': video},
@@ -91,12 +91,6 @@ class YoukuSpider(Spider):
                           callback=self.parse_comment)
         else:  # 已遍历末页, 结束递归
             yield video  # 返回填写好的 VideoItem
-
-    # 预编译正则表达式, 用于解析视频页面详细信息
-    re_subtitle = compile(r'subtitle\\\" title=\\\"(.+?)\\\">')                         # 副标题
-    re_category = compile(r'irCategory\\\" content=\\\"(.+?)\\\"')                      # 分类
-    re_channame = compile(r'module_basic_sub.+?alt.+?\\n\s+(.+?)\\')                    # 频道名称
-    re_chanlink = compile(r'module_basic_sub.+?(//i\.youku\.com/i/(?:[A-Za-z0-9]+))')   # 频道链接
 
     # UPS API URL Request Parameters, UPS接口链接请求参数
     # P_sck 来自 WKH 的优酷账号, 特此鸣谢
