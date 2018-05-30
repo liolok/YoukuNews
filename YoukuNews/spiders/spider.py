@@ -44,6 +44,8 @@ class YoukuSpider(Spider):
         # 回调 parse_file() 解析当前 VideoItem 的文件下载地址列表
         yield Request(url=self.get_ups_url(video['vid']),
                       meta={'item': video},
+                      headers=self.headers,
+                      cookies=self.cookies,
                       callback=self.parse_file)
 
     # 从UPS接口解析文件下载链接列表
@@ -90,9 +92,16 @@ class YoukuSpider(Spider):
         else:  # 已遍历末页, 结束递归
             yield video  # 返回填写好的 VideoItem
 
+    # UPS API URL Request Parameters, UPS接口链接请求参数
+    # P_sck 来自 WKH 的优酷账号, 特此鸣谢
+    P_sck  = 'W2aaE+5jCOmZENJT9Zk0sItuaySRhQ1CuDcHACLPaSJ84g7C2yHG7LOrHnnLpQ9os+AKG1Dtypkk'
+    P_sck += '+mTxhfr7p92xaBUMmz2fuI0OoRAs5agU1nLo/X6HA/gbSkezH6BVX/Dobj9Mv63IsIzqFmcUxA=='
+    headers = {'Referer': scheme + '//v.youku.com'}
+    cookies = {'P_sck': P_sck}
+
     # UPS API Query Parameters, UPS接口查询参数
     # 来源: https://github.com/zhangn1985/ykdl/issues/270
-    ccode = '0590'  # 0502目前已废, 0510备选
+    ccode = '0590'
     utid  = 'OMofE8kM4gMCARueFdD7Bexs'
     ckey  = 'DIl58SLFxFNndSV1GFNnMQVYkx1PP5tKe1siZu%2F86PR1u%2FWh1Ptd%2BWOZsHHWxysS'
     ckey += 'fAOhNJpdVWsdVJNsfJ8Sxd8WKVvNfAS8aS8fAOzYARzPyPc3JvtnPHjTdKfESTdnuTW6ZP'
