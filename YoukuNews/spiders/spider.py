@@ -4,6 +4,7 @@ from scrapy import Spider, Request
 from YoukuNews.items import VideoItem, CommentItem
 from json import loads
 
+
 class YoukuSpider(Spider):
     name = 'youku'      # 爬虫唯一识别名
     scheme = "https:"   # URL传送协议类型
@@ -11,29 +12,39 @@ class YoukuSpider(Spider):
 
     # 从以下三个目录页面开始解析(减少到一个, 方便调试)
     def start_requests(self):
-        yield Request('http://news.youku.com/index/jrrm', self.parse_basic)  # 今日热门
-        # yield Request('http://news.youku.com/index/jkjs', self.parse_basic)  # 监控纪实
-        # yield Request('http://news.youku.com/index/jsqy', self.parse_basic)  # 军事前沿
+        yield Request('https://news.youku.com/index/jrrm', self.parse_basic)  # 今日热门
+        # yield Request('https://news.youku.com/index/jkjs', self.parse_basic)  # 监控纪实
+        # yield Request('https://news.youku.com/index/jsqy', self.parse_basic)  # 军事前沿
+
+    page_num = 10  # 目录页面测试总页数
 
     # 从目录页面解析视频列表及每个视频的基本信息
     def parse_basic(self, response):
+        self.logger.info('parse_basic()正在解析url:%s', response.url)
         video_list = []  # 创建视频信息列表
         for v in response.css('.v'):  # 遍历目录页面
             video = VideoItem()  # 循环实例化 VideoItem, 并解析基本信息填入
-            link = v.css('.v-link').xpath('./a/@href').re('(//v.youku.com/v_show/id_([A-Za-z0-9]+))')
+            link = v.css('.v-link a::attr(href)').re('(//v.youku.com/v_show/id_([A-Za-z0-9]+))')
             video['url'] = self.scheme + link[0]  # 补全协议类型
             video['vid'] = link[1]  # 链接id字段即为vid
-            video['title'] = v.css('.v-link').xpath('./a/@title').extract_first()
-            video['thumb_url'] = self.scheme + v.css('.v-thumb').xpath('./img/@src').re_first('//.+')
+            video['title'] = v.css('a::attr(title)').extract_first()
+            video['thumb_url'] = self.scheme + v.css('img::attr(src)').re_first('//.+')
             video['time'] = v.css('.v-time::text').extract_first()
             video['stat_play'] = v.css('.ico-statplay+span::text').extract_first()    # 播放图标后面的文本
             video['stat_cmt'] = v.css('.ico-statcomment+span::text').extract_first()  # 评论图标后面的文本
             video_list.append(video)  # 追加视频信息列表
         for video in video_list:  # 回调 parse_detail() 对列表中的每个 VideoItem 的视频页面进行解析
             yield Request(url=video['url'], meta={'item': video}, callback=self.parse_detail)
+        page_cur = int(response.css('.pages .current::text').extract_first())
+        self.logger.info('当前目录页码:%s', page_cur)
+        if page_cur < self.page_num:
+            next_page = self.scheme
+            next_page += response.css('.next a[title="下一页"]::attr(href)').extract_first()
+            yield Request(url=next_page, callback=self.parse_basic)
 
     # 从视频页面解析详细信息
     def parse_detail(self, response):
+        self.logger.info('parse_detail()正在解析url:%s', response.url)
         video = response.meta['item']  # 接收 parse_basic() 传入的 VideoItem
         video['subtitle'] = response.css('#subtitle::text').extract_first()
         video['category'] = response.css('.v-tag::text').extract_first()
@@ -50,6 +61,7 @@ class YoukuSpider(Spider):
 
     # 从UPS接口解析文件下载链接列表
     def parse_file(self, response):
+        self.logger.info('parse_file()正在解析url:%s', response.url)
         video = response.meta['item']  # 接收 parse_detail() 传入的 VideoItem
         text = response.text  # 将源码中的json字符串转换成dict字典
         src = loads(text[(text.find('(') + 1):text.rfind(')')])
@@ -65,6 +77,7 @@ class YoukuSpider(Spider):
 
     # 从评论源码解析评论信息
     def parse_comment(self, response):
+        self.logger.info('parse_comment()正在解析url:%s', response.url)
         video = response.meta['item']  # 接收 parse_file() 传入的 VideoItem
         text = response.text  # 将源码中的json字符串转换成dict字典
         src = loads(text[(text.find('(') + 1):text.rfind(')')])
@@ -85,6 +98,7 @@ class YoukuSpider(Spider):
         if page_cur is 1:  # 评论数目和热评id在首页获取一次即可
             video['comment_num'] = src['data']['sourceCommentSize']  # 源码包含的评论总数目
             video['comment_hot'] = [hot['id'] for hot in src['data']['hot']]  # 热评id列表
+        self.logger.info('当前评论页码:%s', page_cur)
         if page_cur < page_sum:  # 递归回调, 遍历下一页
             yield Request(url=self.get_cmt_url(video['vid'], str(page_cur + 1)),
                           meta={'item': video},
