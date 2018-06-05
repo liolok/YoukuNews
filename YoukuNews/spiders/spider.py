@@ -16,7 +16,7 @@ class YoukuSpider(Spider):
         # yield Request('https://news.youku.com/index/jkjs', self.parse_basic)  # 监控纪实
         # yield Request('https://news.youku.com/index/jsqy', self.parse_basic)  # 军事前沿
 
-    page_num = 10  # 目录页面测试总页数
+    page_num = 67  # 目录页面测试总页数
 
     # 从目录页面解析视频列表及每个视频的基本信息
     def parse_basic(self, response):
@@ -51,7 +51,7 @@ class YoukuSpider(Spider):
         channel = response.css('#module_basic_sub a')
         video['channel_name'] = channel.css('::text').re_first(r'\s+(.+?)\n')
         video['channel_link'] = self.scheme
-        video['channel_link'] += channel.xpath('./@href').re_first(r'//i.youku.com/i/(?:[A-Za-z0-9]+)')
+        video['channel_link'] += channel.xpath('./@href').re_first(r'//i.youku.com/i/[A-Za-z0-9]+')
         # 回调 parse_file() 解析当前 VideoItem 的文件下载地址列表
         yield Request(url=self.get_ups_url(video['vid']),
                       meta={'item': video},
@@ -115,7 +115,7 @@ class YoukuSpider(Spider):
 
     # UPS API Query Parameters, UPS接口查询参数
     # 来源: https://github.com/zhangn1985/ykdl/issues/270
-    ccode = '0590'
+    ccode = '0503'
     utid  = 'OMofE8kM4gMCARueFdD7Bexs'
     ckey  = 'DIl58SLFxFNndSV1GFNnMQVYkx1PP5tKe1siZu%2F86PR1u%2FWh1Ptd%2BWOZsHHWxysS'
     ckey += 'fAOhNJpdVWsdVJNsfJ8Sxd8WKVvNfAS8aS8fAOzYARzPyPc3JvtnPHjTdKfESTdnuTW6ZP'
