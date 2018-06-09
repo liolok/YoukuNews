@@ -7,16 +7,21 @@ from json import loads
 
 class YoukuSpider(Spider):
     name = 'youku'      # 爬虫唯一识别名
-    scheme = "https:"   # URL传送协议类型
+    scheme = 'https:'   # URL传送协议类型
     allowed_domains = ['youku.com']  # 爬取域名范围
+    news_url = scheme + '//news.youku.com/'  # 咨询频道首页
 
-    # 从以下三个目录页面开始解析(减少到一个, 方便调试)
+    # https://docs.scrapy.org/en/latest/topics/spiders.html#spider-arguments
+    def __init__(self, category='', page_num=0, *args, **kwargs):
+        super(YoukuSpider, self).__init__(*args, **kwargs)
+        self.category = category  # 分类名称, 默认为空则爬取资讯频道首页
+        self.page_num = page_num  # 爬取页数, 默认为0则爬取目录所有分页
+
     def start_requests(self):
-        yield Request('https://news.youku.com/index/jrrm', self.parse_basic)  # 今日热门
-        # yield Request('https://news.youku.com/index/jkjs', self.parse_basic)  # 监控纪实
-        # yield Request('https://news.youku.com/index/jsqy', self.parse_basic)  # 军事前沿
-
-    page_num = 67  # 目录页面测试总页数
+        if self.category is '':
+            yield Request(self.news_url, self.parse_basic)
+        else:  # TODO: 加入分类目录判断是否需要插入'index/'
+            yield Request(self.news_url + 'index/' + self.category, self.parse_basic)
 
     # 从目录页面解析视频列表及每个视频的基本信息
     def parse_basic(self, response):
@@ -35,12 +40,13 @@ class YoukuSpider(Spider):
             video_list.append(video)  # 追加视频信息列表
         for video in video_list:  # 回调 parse_detail() 对列表中的每个 VideoItem 的视频页面进行解析
             yield Request(url=video['url'], meta={'item': video}, callback=self.parse_detail)
+        # 翻页
+        page_num = int(self.page_num)  # 确保传入参数类型从str转为int
         page_cur = int(response.css('.pages .current::text').extract_first())
+        next_url = response.css('.next a[title="下一页"]::attr(href)').extract_first()
         self.logger.info('当前目录页码:%s', page_cur)
-        if page_cur < self.page_num:
-            next_page = self.scheme
-            next_page += response.css('.next a[title="下一页"]::attr(href)').extract_first()
-            yield Request(url=next_page, callback=self.parse_basic)
+        if next_url and (not page_num or page_cur < page_num):
+            yield Request(url=self.scheme + next_url, callback=self.parse_basic)
 
     # 从视频页面解析详细信息
     def parse_detail(self, response):
@@ -70,7 +76,7 @@ class YoukuSpider(Spider):
                 video['file_urls'] = [seg['cdn_url'] for seg in stm['segs']]
         # 回调 parse_comment() 对当前 VideoItem 的评论源码进行解析
         video['comment_list'] = []  # 解析过程中追加评论列表
-        yield Request(url=self.get_cmt_url(video['vid'], "1"),
+        yield Request(url=self.get_cmt_url(video['vid'], '1'),
                       meta={'item': video},
                       headers={'Referer': video['url']},
                       callback=self.parse_comment)
@@ -139,15 +145,15 @@ class YoukuSpider(Spider):
     # 拼接评论链接
     def get_cmt_url(self, vid, page):
         cmt_url = self.scheme
-        cmt_url += "//p.comments.youku.com"         # host
-        cmt_url += "/ycp/comment/pc/commentList"    # path
-        cmt_url += "?jsoncallback=n_commentList"    # query & parameters
-        cmt_url += "&app=" + "100-DDwODVkv"
-        cmt_url += "&objectId=" + vid
-        cmt_url += "&objectType=" + "1"
-        cmt_url += "&listType=" + "0"
-        cmt_url += "&currentPage=" + page
-        cmt_url += "&pageSize=" + "30"
-        cmt_url += "&sign=" + "df030fad8c097139f7fd726e85f63339"
-        cmt_url += "&time=" + "1526430304"
+        cmt_url += '//p.comments.youku.com'         # host
+        cmt_url += '/ycp/comment/pc/commentList'    # path
+        cmt_url += '?jsoncallback=n_commentList'    # query & parameters
+        cmt_url += '&app=' + '100-DDwODVkv'
+        cmt_url += '&objectId=' + vid
+        cmt_url += '&objectType=' + '1'
+        cmt_url += '&listType=' + '0'
+        cmt_url += '&currentPage=' + page
+        cmt_url += '&pageSize=' + '30'
+        cmt_url += '&sign=' + 'df030fad8c097139f7fd726e85f63339'
+        cmt_url += '&time=' + '1526430304'
         return cmt_url
