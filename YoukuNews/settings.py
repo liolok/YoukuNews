@@ -64,18 +64,17 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'YoukuNews.pipelines.YoukunewsPipeline': 300,
-    'YoukuNews.pipelines.ThumbPipeline': 1,
-    'YoukuNews.pipelines.FilesPipeline': 2,
+    'YoukuNews.pipelines.VideoThumbPipeline': 1,
+    'YoukuNews.pipelines.VideoFilesPipeline': 2,
+    'YoukuNews.pipelines.VideoInfoPipeline': 3,
 }
 
 # Configure media pipelines, 媒体文件下载配置
 # https://doc.scrapy.org/en/latest/topics/media-pipeline.html
-# Configure files pipelines, 视频文件下载配置
-FILES_STORE = './Downloads/'  # 统一下载文件夹, 在pipeline中进一步区分
-FILES_RESULT_FIELD = 'file_paths'  # 自定义下载结果Field
-# Configure images pipelines, 缩略图下载配置
-IMAGES_STORE = './Downloads/'  # 统一下载文件夹, 在pipeline中进一步区分
+
+# 统一下载文件夹, 子文件夹在相应的pipelines中以vid命名
+FILES_STORE = 'D:/YoukuNews/Downloads/'
+IMAGES_STORE = 'D:/YoukuNews/Downloads/'
 IMAGES_URLS_FIELD = 'thumb_url'  # 自定义链接Field
 IMAGES_MIN_HEIGHT = 110  # 最小高度
 IMAGES_MIN_WIDTH = 110  # 最小宽度

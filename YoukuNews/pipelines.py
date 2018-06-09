@@ -14,7 +14,7 @@ from scrapy.pipelines.files import FilesPipeline
 # https://docs.scrapy.org/en/latest/topics/item-pipeline.html#write-items-to-mongodb
 # The main point of this example is to show how to use from_crawler() method \
 # and how to clean up the resources properly.
-class YoukunewsPipeline(object):
+class VideoInfoPipeline(object):
     collection_name = 'VideoInfo'
 
     def __init__(self, mongo_uri, mongo_db):
@@ -40,7 +40,7 @@ class YoukunewsPipeline(object):
 
 
 # https://doc.scrapy.org/en/latest/topics/media-pipeline.html#module-scrapy.pipelines.files
-class ThumbPipeline(ImagesPipeline):
+class VideoThumbPipeline(ImagesPipeline):
     # 从item中取出缩略图的url并下载文件
     def get_media_requests(self, item, info):
         yield Request(url=item['thumb_url'], meta={'item': item})
@@ -50,14 +50,14 @@ class ThumbPipeline(ImagesPipeline):
         vid = request.meta['item']['vid']  # 获取item的vid
         return "%s/thumb.jpg" % vid  # 返回路径及命名格式
 
-    # 下载完成后, 将缩略图本地路径填入到 item 的 thumb_path
+    # 下载完成后, 将缩略图本地路径(IMAGES_STORE + 相对路径)填入到 item 的 thumb_path
     def item_completed(self, results, item, info):
-        item['thumb_path'] = [x['path'] for ok, x in results if ok][0]
+        item['thumb_path'] = self.store.basedir + [x['path'] for ok, x in results if ok][0]
         return item
 
 
 # https://doc.scrapy.org/en/latest/topics/media-pipeline.html#module-scrapy.pipelines.files
-class FilesPipeline(FilesPipeline):
+class VideoFilesPipeline(FilesPipeline):
     # 从item中取出分段视频的url列表并下载文件
     def get_media_requests(self, item, info):
         urls = item['file_urls']
@@ -70,7 +70,7 @@ class FilesPipeline(FilesPipeline):
         index = request.meta['index']  # 获取当前分段文件序号
         return "%s/%s.mp4" % (vid, index)  # 返回路径及命名格式
 
-    # 下载完成后, 将分段视频本地路径填入到 item 的 file_paths
+    # 下载完成后, 将分段视频本地路径列表(FILES_STORE + 相对路径)填入到 item 的 file_paths
     def item_completed(self, results, item, info):
-        item['file_paths'] = [x['path'] for ok, x in results if ok]
+        item['file_paths'] = [self.store.basedir + x['path'] for ok, x in results if ok]
         return item
