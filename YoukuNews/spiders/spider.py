@@ -12,16 +12,17 @@ class YoukuSpider(Spider):
     news_url = scheme + '//news.youku.com/'  # 咨询频道首页
 
     # https://docs.scrapy.org/en/latest/topics/spiders.html#spider-arguments
-    def __init__(self, category='', page_num=0, *args, **kwargs):
+    def __init__(self, catelog='', pages=0, *args, **kwargs):
         super(YoukuSpider, self).__init__(*args, **kwargs)
-        self.category = category  # 分类名称, 默认为空则爬取资讯频道首页
-        self.page_num = page_num  # 爬取页数, 默认为0则爬取目录所有分页
+        self.catelog = catelog   # 目录名称, 默认为空则爬取资讯频道首页
+        self.pages = int(pages)  # 爬取页数, 默认为0则爬取目录所有分页
 
     def start_requests(self):
-        if self.category is '':
+        if self.catelog is '':
             yield Request(self.news_url, self.parse_basic)
-        else:  # TODO: 加入分类目录判断是否需要插入'index/'
-            yield Request(self.news_url + 'index/' + self.category, self.parse_basic)
+        else:
+            path = self.news_url + ('index/', '')[self.catelog == 'renwen']
+            yield Request(path + self.catelog, self.parse_basic)
 
     # 从目录页面解析视频列表及每个视频的基本信息
     def parse_basic(self, response):
@@ -40,12 +41,11 @@ class YoukuSpider(Spider):
             video_list.append(video)  # 追加视频信息列表
         for video in video_list:  # 回调 parse_detail() 对列表中的每个 VideoItem 的视频页面进行解析
             yield Request(url=video['url'], meta={'item': video}, callback=self.parse_detail)
-        # 翻页
-        page_num = int(self.page_num)  # 确保传入参数类型从str转为int
         page_cur = int(response.css('.pages .current::text').extract_first())
         next_url = response.css('.next a[title="下一页"]::attr(href)').extract_first()
         self.logger.info('当前目录页码:%s', page_cur)
-        if next_url and (not page_num or page_cur < page_num):
+        # 目录翻页. 存在下一页 且 当前页小于爬取总页数 时爬取下一页
+        if next_url and (not self.pages or page_cur < self.pages):
             yield Request(url=self.scheme + next_url, callback=self.parse_basic)
 
     # 从视频页面解析详细信息
@@ -53,7 +53,8 @@ class YoukuSpider(Spider):
         self.logger.info('parse_detail()正在解析url:%s', response.url)
         video = response.meta['item']  # 接收 parse_basic() 传入的 VideoItem
         video['subtitle'] = response.css('#subtitle::text').extract_first()
-        video['category'] = response.css('.v-tag::text').extract_first()
+        tag = response.css('.v-tag')
+        video['category'] = tag.css('::text').extract_first() if tag else '未分类'
         channel = response.css('#module_basic_sub a')
         video['channel_name'] = channel.css('::text').re_first(r'\s+(.+?)\n')
         video['channel_link'] = self.scheme
