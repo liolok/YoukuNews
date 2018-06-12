@@ -91,9 +91,7 @@ class YoukuSpider(Spider):
         for c in src['data']['comment']:  # 遍历当前页的评论
             cmt = CommentItem()  # 实例化 CommentItem, 并填入评论信息
             cmt['id'] = c['id']
-            cmt['id_user'] = c['userId']
-            cmt['id_parent'] = c['parentCommentId']
-            cmt['at_users'] = c['atUsers']
+            cmt['user'] = c['userId']
             cmt['content'] = c['content']
             cmt['time'] = c['createTime']
             cmt['num_up'] = c['upCount']

@@ -37,11 +37,9 @@ class VideoItem(Item):      # 视频信息
 
 class CommentItem(Item):    # 评论信息
     id = Field()            # 唯一识别码
-    id_user = Field()       # 发送评论用户
-    id_parent = Field()     # 父评论
-    at_users = Field()      # 对哪些用户发送
+    time = Field()          # 发布时间戳
+    user = Field()          # 发布用户ID
     content = Field()       # 评论内容
-    time = Field()          # 评论创建时间
     num_up = Field()        # 点赞数
     num_down = Field()      # 点踩数
     num_reply = Field()     # 回复数
