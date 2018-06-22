@@ -12,17 +12,17 @@
 
 ### 其他模块
 
-```bash
-# PyMongo, 用于将视频信息写入MongoDB数据库;
-# Pillow, 用于处理视频封面图片.
-pip3 install pymongo pillow
-```
+- `PyMongo`, 用于将视频信息写入MongoDB数据库;
+- `Pillow`, 用于处理视频封面图片.
+
+`pip3 install pymongo pillow`
+
 
 ## 数据结构
 
 ### 视频信息
 
-> `dict` in Python => `Document` in MongoDB
+> `dict` in Python / `Document` in MongoDB
 
 Key            | Type in Python   | Type in MongoDB     | 含义
 -------------- | ---------------- | ------------------- | ------------------------
@@ -38,7 +38,7 @@ Key            | Type in Python   | Type in MongoDB     | 含义
 `channel_link` | `str`            | `String`            | 频道链接
 `comment_num`  | `int`            | `Int32`             | 评论数目
 `comment_hot`  | `list` of `int`  | `Array` of `Int64`  | 热评ID列表
-`comment_list` | `list` of `dict` | `Array` of `Object` | 所有评论列表
+`comment_list` | `list` of `dict` | `Array` of `Object` | 所有评论列表(评论信息若干) 
 `thumb_url`    | `str`            | `String`            | 缩略图下载链接
 `thumb_path`   | `str`            | `String`            | 缩略图本地路径
 `file_urls`    | `list` of `str`  | `Array` of `String` | 分段视频文件下载链接列表
@@ -58,10 +58,12 @@ Key         | Type in Python | Type in MongoDB | 含义
 `num_reply` | `int`          | `Int32`         | 回复数
 `content`   | `str`          | `String`        | 评论内容
 
+## 数据流
 
-
-## 系统架构
+> 下图取自Scrapy官方文档, 更多详情其中的[Architecture overview(架构概览)](https://doc.scrapy.org/en/1.5/topics/architecture.html)章节.
 
 ![Scrapy 系统架构图](https://doc.scrapy.org/en/1.5/_images/scrapy_architecture_02.png)
 
-> 未完待续
+<center>Scrapy 数据流</center>
+
+> 目前本爬虫只涉及到上图中的`Items`, `Spiders`以及`Item Pipelines`, 其他Scrapy组件几乎并未修改, 均使用默认配置.
