@@ -81,7 +81,7 @@ Scrapy 使用 `Requests`(请求) 与 `Responses`(响应) 爬取网站. 对网站
 
 #### Items
 
-Sccrapy 提供 `Item` 类来结构化爬取到的数据. `Item` 提供了类字典([dict](https://docs.python.org/3/library/stdtypes.html#dict))的 API, 并且可以很方便的声明字段.
+Sccrapy 提供 `Item` 类来结构化爬取到的数据. `Item` 提供了类字典([`dict`](https://docs.python.org/3/library/stdtypes.html#dict))的 API, 并且可以很方便的声明字段.
 
 > 参见 本文档 [数据结构](#数据结构) 章节及官方文档 [Items](https://doc.scrapy.org/en/1.5/topics/items.html) 章节.
 
@@ -189,11 +189,13 @@ Key         | Type in Python | Type in MongoDB | 含义
 
 以上文的视频为例, 优酷的 UPS 链接格式如下:
 
-```
+```bash
 https://ups.youku.com/ups/get.json?callback=json&vid=XMzY3OTc2NjAyOA&ccode=0503&client_ip=192.168.1.1&client_ts=1527072900&utid=OMofE8kM4gMCARueFdD7Bexs&ckey=DIl58SLFxFNndSV1GFNnMQVYkx1PP5tKe1siZu%2F86PR1u%2FWh1Ptd%2BWOZsHHWxysSfAOhNJpdVWsdVJNsfJ8Sxd8WKVvNfAS8aS8fAOzYARzPyPc3JvtnPHjTdKfESTdnuTW6ZPvk2pNDh4uFzotgdMEFkzQ5wZVXl2Pf1%2FY6hLK0OnCNxBj3%2Bnb0v72gZ6b0td%2BWOZsHHWxysSo%2F0y9D2K42SaB8Y%2F%2BaD2K42SaB8Y%2F%2BahU%2BWOZsHcrxysooUeND
 ```
 
 > 直接访问该链接将会返回错误, 提示"客户端无权播放", 详见后文.
+
+> UPS 接口链接的拼接参见 `get_ups_url()`.
 
 #### 查询参数
 
@@ -245,7 +247,7 @@ https://ups.youku.com/ups/get.json?callback=json&vid=XMzY3OTc2NjAyOA&ccode=0503&
 
 > 与 UPS 接口的严格验证不同, 评论接口的验证相对宽松, 各查询参数使用固定值即可返回正确数据.
 
-```
+```bash
 https://p.comments.youku.com/ycp/comment/pc/commentList?jsoncallback=n_commentList&app=100-DDwODVkv&objectId=XMzY3OTc2NjAyOA&objectType=1&listType=0&currentPage=1&pageSize=30&sign=df030fad8c097139f7fd726e85f63339&time=1526430304
 ```
 
@@ -253,6 +255,8 @@ https://p.comments.youku.com/ycp/comment/pc/commentList?jsoncallback=n_commentLi
 - `objectId` 对应每个视频信息中的 `vid` ;
 - `currentPage` 是当前访问的接口链接是总页数中的第几页(总页数在返回的数据中, 见后文);
 - 其他参数均采用固定值, 经测试并未受限.
+
+> 评论接口链接的拼接参见 `get_cmt_url()`.
 
 #### 评论信息解析
 
@@ -264,7 +268,7 @@ https://p.comments.youku.com/ycp/comment/pc/commentList?jsoncallback=n_commentLi
 
 #### 评论接口翻页
 
-评论接口翻页方式与前文中的目录页面翻页相比更简单, 只需获取当前页码 `currentPage` 和
+评论接口翻页方式与前文中的目录页面翻页相比更简单, 只需获取当前页码 `currentPage` 和总页数 `totalPage` 即可. 然后同样通过递归调用 `parse_comment()` 实现评论翻页,
 
 ![评论接口翻页](doc/images/XMzY3OTc2NjAyOA_comment_next_page.png)
 
@@ -286,7 +290,7 @@ https://p.comments.youku.com/ycp/comment/pc/commentList?jsoncallback=n_commentLi
 
 *<center>图 10. 下载目录结构及文件命名</center>*
 
-> 大部分资讯视频因为时长较短, 只有一个分段文件即 `0.mp4`.
+> 绝大部分资讯视频因时长较短只有一个分段文件, 即 `0.mp4`.
 
 ### 视频信息输出至数据库
 
